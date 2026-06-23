@@ -78,7 +78,7 @@ async def handler(event):
             
             try:
                 # Send to target channel
-                msg = await client.send_message(TARGET_CHANNEL, f"/ajib {full_cc}")
+                msg = await client.send_message(TARGET_CHANNEL, f"/chk {full_cc}")
                 msg_counter += 1
                 print(f"✅ SENT: {full_cc[:10]}*** | Total: {msg_counter}")
                 
