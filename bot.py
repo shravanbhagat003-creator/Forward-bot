@@ -3,22 +3,23 @@ import asyncio
 import re
 import hashlib
 import os
+import sys
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
-from telethon.errors import FloodWaitError, RPCError
+from telethon.errors import FloodWaitError
 
-# ===== 🔐 YOUR DETAILS (Hardcoded - Direct daal do) =====
-API_ID = 37836508
-API_HASH = "5b539a894960ce38914c7205d5ed5418"
-STRING_SESSION = "1BVtsOKYBuxHDVw9uxXwnD493DfPuWgAwkxVYOLx63pZywc90Mt2Q5uCfSfK1gnUFQ0FBqGO2-i7bCJFU2A9J27wC2SJotWOQszeNsRkm6paaIxemhCHOFVViyAHSrCIfcxGLajg7YlwTFA7epTbXUKiRdsYHrYWZRY-KOMcgHyDqvEKkpmi9OEUu6PyNXPyHlBqnTyH-ULbhblsXHTE8MNMZOVkik8Wpz5J5xu7bKIFTSTXekRAeDw2CcMvSyneWSrB2Yrgrg_UA7kMiyM5Otkg3DD32LHDJYVuSJmpeFYEBqCJo4zkWNgavvB6FegK9rkSr68V05J-cFHY9ViS9LJYA5HxMIks="
+# ===== 🔐 YOUR DETAILS =====
+API_ID = int(os.environ.get("API_ID", 37836508))
+API_HASH = os.environ.get("API_HASH", "5b539a894960ce38914c7205d5ed5418")
+STRING_SESSION = os.environ.get("STRING_SESSION", "1BVtsOLsBu21GjA1fzHOFNlKnJGtYV-5pQmsec1ZofZIMwL8ZbQlQmqoAoJFCVBoteCwrsAMKe64ChhDAV2nB-M3mhcLN-S1KOzX6x5woz0VXZkNHp8KBYW9NvMZKPsFBBGn-ezChCyf7DiY9iDtfsnLT-4StOqplQw15yTUFTMUb4Kx2jN6RgIKFIwzkLsksBLKzlSir_q17bvdlqxSkJG9f6RTggRCFoJZnIOGuCHuQ7R6kaAXYvHVghhBgRkBYqiSAtj8694fzZAMfzzPyg94psHk1aPGQH8BjVHTr7Gw7nES5lWoVj2Mhg-UIpFW7OQS28YEiEYt0CLC0vpJ8qm_N6Yp9M1E=")
 
-# 📢 CHANNELS
-SOURCE_CHANNEL = -1003795088447
-TARGET_CHANNEL = -1003688356129
+# 📢 CHANNELS (Use environment variables)
+SOURCE_CHANNEL = int(os.environ.get("SOURCE_CHANNEL", -1003984452893))
+TARGET_CHANNEL = int(os.environ.get("TARGET_CHANNEL", -1003640490073))
 
 # ⏱️ TIMINGS
-DELETE_DELAY = 30
-GAP_DELAY = 30
+DELETE_DELAY = int(os.environ.get("DELETE_DELAY", 30))
+GAP_DELAY = int(os.environ.get("GAP_DELAY", 30))
 
 # 🚫 BLOCKED BINS
 BLOCK_BINS = {
@@ -58,7 +59,7 @@ async def handler(event):
     
     for match in cc_regex.finditer(event.text):
         full_cc = match.group(0).replace(" ", "")
-        card_number = full_cc.split('|')[0]
+        card_number = full_cc.split('|')[0].strip()
         prefix6 = card_number[:6]
         
         if prefix6 in BLOCK_BINS:
@@ -104,6 +105,11 @@ async def main():
     print("🚀 Bot is running... Press Ctrl+C to stop\n")
     await client.run_until_disconnected()
 
-if name == "main":
-    with client:
+if __name__ == "__main__":
+    try:
         client.loop.run_until_complete(main())
+    except KeyboardInterrupt:
+        print("\n🛑 Bot stopped by user")
+    except Exception as e:
+        print(f"❌ Fatal error: {e}")
+        sys.exit(1)
