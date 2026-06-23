@@ -1,2 +1,1 @@
-telethon==1.34.0
-pycryptodome==3.19.0
+telethon
