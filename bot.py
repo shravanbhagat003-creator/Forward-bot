@@ -8,18 +8,18 @@ from telethon import TelegramClient, events
 from telethon.sessions import StringSession
 from telethon.errors import FloodWaitError
 
-# ===== 🔐 YOUR DETAILS =====
-API_ID = int(os.environ.get("API_ID", 37836508))
-API_HASH = os.environ.get("API_HASH", "5b539a894960ce38914c7205d5ed5418")
-STRING_SESSION = os.environ.get("STRING_SESSION", "1BVtsOLsBu21GjA1fzHOFNlKnJGtYV-5pQmsec1ZofZIMwL8ZbQlQmqoAoJFCVBoteCwrsAMKe64ChhDAV2nB-M3mhcLN-S1KOzX6x5woz0VXZkNHp8KBYW9NvMZKPsFBBGn-ezChCyf7DiY9iDtfsnLT-4StOqplQw15yTUFTMUb4Kx2jN6RgIKFIwzkLsksBLKzlSir_q17bvdlqxSkJG9f6RTggRCFoJZnIOGuCHuQ7R6kaAXYvHVghhBgRkBYqiSAtj8694fzZAMfzzPyg94psHk1aPGQH8BjVHTr7Gw7nES5lWoVj2Mhg-UIpFW7OQS28YEiEYt0CLC0vpJ8qm_N6Yp9M1E=")
+# ===== 🔐 YOUR DETAILS (Directly in code) =====
+API_ID = 37836508
+API_HASH = "5b539a894960ce38914c7205d5ed5418"
+STRING_SESSION = "1BVtsOLsBu21GjA1fzHOFNlKnJGtYV-5pQmsec1ZofZIMwL8ZbQlQmqoAoJFCVBoteCwrsAMKe64ChhDAV2nB-M3mhcLN-S1KOzX6x5woz0VXZkNHp8KBYW9NvMZKPsFBBGn-ezChCyf7DiY9iDtfsnLT-4StOqplQw15yTUFTMUb4Kx2jN6RgIKFIwzkLsksBLKzlSir_q17bvdlqxSkJG9f6RTggRCFoJZnIOGuCHuQ7R6kaAXYvHVghhBgRkBYqiSAtj8694fzZAMfzzPyg94psHk1aPGQH8BjVHTr7Gw7nES5lWoVj2Mhg-UIpFW7OQS28YEiEYt0CLC0vpJ8qm_N6Yp9M1E="
 
-# 📢 CHANNELS (Use environment variables)
-SOURCE_CHANNEL = int(os.environ.get("SOURCE_CHANNEL", -1003984452893))
-TARGET_CHANNEL = int(os.environ.get("TARGET_CHANNEL", -1003640490073))
+# 📢 CHANNELS (Direct IDs)
+SOURCE_CHANNEL = -1003795088447
+TARGET_CHANNEL = -1003640490073
 
 # ⏱️ TIMINGS
-DELETE_DELAY = int(os.environ.get("DELETE_DELAY", 30))
-GAP_DELAY = int(os.environ.get("GAP_DELAY", 30))
+DELETE_DELAY = 30
+GAP_DELAY = 30
 
 # 🚫 BLOCKED BINS
 BLOCK_BINS = {
