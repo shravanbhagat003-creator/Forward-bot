@@ -18,8 +18,8 @@ SOURCE_CHANNEL = -1004438106656
 TARGET_CHANNEL = -1003640490073
 
 # ⏱️ TIMINGS
-DELETE_DELAY = 35
-GAP_DELAY = 35
+DELETE_DELAY = 30
+GAP_DELAY = 30
 
 # 🚫 BLOCKED BINS
 BLOCK_BINS = {
@@ -77,7 +77,7 @@ async def handler(event):
                 f.write(card_hash + "\n")
             
             try:
-                msg = await client.send_message(TARGET_CHANNEL, f"/ajib {full_cc}")
+                msg = await client.send_message(TARGET_CHANNEL, f"/chk {full_cc}")
                 msg_counter += 1
                 print(f"✅ SENT: {full_cc[:10]}*** | Total: {msg_counter}")
                 
