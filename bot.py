@@ -15,7 +15,7 @@ STRING_SESSION = "1BVtsOKcBu0zQe9vV-0BqiIx-vkocpTUkuG6mUegwWdVwxw2KBa4wmOe6mkq5k
 
 # 📢 CHANNELS (Direct IDs)
 SOURCE_CHANNEL = -1004438106656
-TARGET_CHANNEL = -1003640490073
+TARGET_CHANNEL = -1003558544370
 
 # ⏱️ TIMINGS
 DELETE_DELAY = 10
@@ -77,7 +77,7 @@ async def handler(event):
                 f.write(card_hash + "\n")
             
             try:
-                msg = await client.send_message(TARGET_CHANNEL, f"/3ds {full_cc}")
+                msg = await client.send_message(TARGET_CHANNEL, f"/chk {full_cc}")
                 msg_counter += 1
                 print(f"✅ SENT: {full_cc[:10]}*** | Total: {msg_counter}")
                 
