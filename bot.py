@@ -1,10 +1,11 @@
-# bot_updated.py
+# bot_fixed_final.py
 import asyncio
 import re
 import hashlib
 import os
 import sys
 import json
+import random
 from datetime import datetime
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
@@ -34,17 +35,21 @@ BLOCK_BINS = {
 }
 
 # ===== SESSION MANAGEMENT =====
-SESSION_FILE = "session_data.json"
+# Unique session file har baar alag
+SESSION_ID = random.randint(1000, 9999)
+SESSION_FILE = f"session_{SESSION_ID}.json"
+DEVICE_NAME = f"iPhone_{random.randint(10000, 99999)}"
 
 def save_session(session_string):
-    """Save session to file"""
+    """Save session with unique ID"""
     data = {
         "session": session_string,
+        "device": DEVICE_NAME,
         "timestamp": datetime.now().isoformat()
     }
     with open(SESSION_FILE, "w") as f:
         json.dump(data, f)
-    print("💾 Session saved to file")
+    print(f"💾 Session saved: {SESSION_FILE}")
 
 def load_session():
     """Load session from file"""
@@ -57,29 +62,31 @@ def load_session():
             pass
     return None
 
-# ===== SETUP WITH FIXES =====
-# Try to load saved session first
-saved_session = load_session()
-if saved_session and saved_session != STRING_SESSION:
-    print("🔄 Using saved session from file")
-    STRING_SESSION = saved_session
+# ===== CREATE CLIENT WITH UNIQUE DEVICE =====
+# Try saved session first
+saved = load_session()
+if saved:
+    print(f"🔄 Using saved session from: {SESSION_FILE}")
+    STRING_SESSION = saved
 else:
-    # Save current session
     save_session(STRING_SESSION)
 
-# Create client with better settings
+# Client with UNIQUE device ID
 client = TelegramClient(
     StringSession(STRING_SESSION),
     API_ID,
     API_HASH,
     connection=ConnectionTcpAbridged,
-    connection_retries=10,
-    retry_delay=2,
-    auto_reconnect=True,
+    connection_retries=3,
+    retry_delay=1,
+    auto_reconnect=False,  # Manual control
     flood_sleep_threshold=60,
-    device_model="iPhone 15 Pro",
-    system_version="iOS 17.2"
+    device_model=DEVICE_NAME,
+    system_version=f"iOS_{random.randint(15, 18)}.{random.randint(0, 9)}"
 )
+
+print(f"📱 Device: {DEVICE_NAME}")
+print(f"📁 Session: {SESSION_FILE}")
 
 # Load posted CCs
 posted = set()
@@ -95,8 +102,7 @@ cc_regex = re.compile(
 
 msg_counter = 0
 lock = asyncio.Lock()
-reconnect_attempts = 0
-max_reconnect = 5
+is_connected = False
 
 @client.on(events.NewMessage(chats=SOURCE_CHANNEL))
 async def handler(event):
@@ -105,7 +111,7 @@ async def handler(event):
     if not event.text:
         return
     
-    print(f"\n📥 New message received at {datetime.now().strftime('%H:%M:%S')}")
+    print(f"\n📥 Message at {datetime.now().strftime('%H:%M:%S')}")
     
     for match in cc_regex.finditer(event.text):
         full_cc = match.group(0).replace(" ", "")
@@ -113,12 +119,12 @@ async def handler(event):
         prefix6 = card_number[:6]
         
         if prefix6 in BLOCK_BINS:
-            print(f"⛔ Skipped blocked BIN: {prefix6}")
+            print(f"⛔ Blocked BIN: {prefix6}")
             continue
         
         card_hash = hashlib.md5(card_number.encode()).hexdigest()
         if card_hash in posted:
-            print(f"♻️ Duplicate CC, skipping...")
+            print(f"♻️ Duplicate")
             continue
         
         async with lock:
@@ -126,115 +132,80 @@ async def handler(event):
             with open(dup_file, "a") as f:
                 f.write(card_hash + "\n")
             
-            # Retry logic for sending
-            for attempt in range(3):
+            try:
+                msg = await client.send_message(TARGET_CHANNEL, f"/br {full_cc}")
+                msg_counter += 1
+                print(f"✅ SENT: {full_cc[:10]}*** | Total: {msg_counter}")
+                
+                await asyncio.sleep(DELETE_DELAY)
                 try:
-                    msg = await client.send_message(TARGET_CHANNEL, f"/br {full_cc}")
-                    msg_counter += 1
-                    print(f"✅ SENT: {full_cc[:10]}*** | Total: {msg_counter}")
-                    
-                    await asyncio.sleep(DELETE_DELAY)
-                    try:
-                        await msg.delete()
-                        print(f"🗑️ Deleted message")
-                    except:
-                        pass
-                    
-                    await asyncio.sleep(GAP_DELAY)
-                    break  # Success, exit retry loop
-                    
-                except FloodWaitError as e:
-                    print(f"⏳ Flood wait: {e.seconds} seconds")
-                    await asyncio.sleep(e.seconds + 5)
-                except RPCError as e:
-                    print(f"⚠️ RPC Error (attempt {attempt+1}/3): {e}")
-                    if attempt < 2:
-                        await asyncio.sleep(5 * (attempt + 1))
-                    else:
-                        print(f"❌ Failed after 3 attempts")
-                except Exception as e:
-                    print(f"❌ Error: {e}")
-                    if attempt < 2:
-                        await asyncio.sleep(3)
-                    else:
-                        print(f"❌ Failed after 3 attempts")
+                    await msg.delete()
+                    print(f"🗑️ Deleted")
+                except:
+                    pass
+                
+                await asyncio.sleep(GAP_DELAY)
+                
+            except FloodWaitError as e:
+                print(f"⏳ Flood: {e.seconds}s")
+                await asyncio.sleep(e.seconds + 5)
+            except RPCError as e:
+                print(f"⚠️ RPC: {e}")
+            except Exception as e:
+                print(f"❌ Error: {e}")
 
-async def reconnect():
-    """Reconnect logic"""
-    global reconnect_attempts
-    
-    while reconnect_attempts < max_reconnect:
-        try:
-            print(f"🔄 Reconnection attempt {reconnect_attempts + 1}/{max_reconnect}")
-            await client.disconnect()
-            await asyncio.sleep(5)
-            await client.connect()
-            
-            # Test connection
-            await client.get_me()
-            print("✅ Reconnected successfully!")
-            reconnect_attempts = 0
-            return True
-            
-        except Exception as e:
-            reconnect_attempts += 1
-            print(f"❌ Reconnect failed: {e}")
-            await asyncio.sleep(10 * reconnect_attempts)
-    
-    return False
+async def start_bot():
+    """Start with error handling"""
+    try:
+        print("🔄 Connecting...")
+        await client.start()
+        
+        me = await client.get_me()
+        print(f"✅ Connected: {me.first_name} (@{me.username})")
+        
+        # Save fresh session
+        save_session(client.session.save())
+        
+        return True
+        
+    except Exception as e:
+        print(f"❌ Start failed: {e}")
+        
+        # Delete corrupted session
+        if os.path.exists(SESSION_FILE):
+            os.remove(SESSION_FILE)
+            print(f"🗑️ Deleted: {SESSION_FILE}")
+        
+        print("\n🔄 Generate NEW session:")
+        print("python generate_session.py")
+        return False
 
 async def main():
-    global reconnect_attempts
+    print("\n" + "="*50)
+    print("🤖 CC FORWARDER BOT")
+    print("="*50)
+    print(f"📱 Device: {DEVICE_NAME}")
+    print(f"📁 Session: {SESSION_FILE}")
+    print("="*50 + "\n")
     
-    while True:
-        try:
-            print("🚀 Starting bot...")
-            await client.start()
-            
-            # Save session after successful start
-            save_session(client.session.save())
-            
-            me = await client.get_me()
-            print(f"🤖 Bot Started as: {me.first_name} (@{me.username})")
-            print(f"📡 Monitoring: {SOURCE_CHANNEL}")
-            print(f"🎯 Forwarding to: {TARGET_CHANNEL}")
-            print(f"💾 Session saved to: {SESSION_FILE}")
-            print("🚀 Bot is running... Press Ctrl+C to stop\n")
-            
-            await client.run_until_disconnected()
-            
-        except ConnectionError as e:
-            print(f"⚠️ Connection lost: {e}")
-            if await reconnect():
-                continue
-            else:
-                print("❌ Max reconnection attempts reached")
-                break
-                
-        except Exception as e:
-            print(f"❌ Error in main loop: {e}")
-            
-            # Check if it's session error
-            if "authorization key" in str(e).lower() or "invalid" in str(e).lower():
-                print("🔄 Session invalid, generating new session...")
-                # Delete old session file
-                if os.path.exists(SESSION_FILE):
-                    os.remove(SESSION_FILE)
-                print("📝 Please generate new session using generate_session.py")
-                sys.exit(1)
-            
-            await asyncio.sleep(10)
+    if not await start_bot():
+        sys.exit(1)
+    
+    print(f"📡 Source: {SOURCE_CHANNEL}")
+    print(f"🎯 Target: {TARGET_CHANNEL}")
+    print("🚀 Running... Press Ctrl+C\n")
+    
+    try:
+        await client.run_until_disconnected()
+    except Exception as e:
+        print(f"❌ Disconnected: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("\n🛑 Bot stopped by user")
-        # Save session on exit
-        try:
-            save_session(client.session.save())
-        except:
-            pass
+        print("\n🛑 Stopped")
     except Exception as e:
-        print(f"❌ Fatal error: {e}")
+        print(f"❌ Fatal: {e}")
         sys.exit(1)
