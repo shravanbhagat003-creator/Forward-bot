@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+*.log
+posted_cc.txt
+data/
+.DS_Store
+.env
+*.db
+*.sqlite3
